@@ -1,0 +1,66 @@
+// Daz Studio Character Generator - FIX: SAVE FUNCTION
+var nHumans = 3;
+var nZombies = 3;
+
+// Absolute Windows Paths
+var baseFigure = "C:/users/Public/Documents/My DAZ 3D Library/People/Genesis 9/Genesis 9.duf";
+var outputFolder = "C:/users/wgoton/Documents/DAZ 3D/Studio/My Library/Scenes";
+
+var humanSkins = [
+    "C:/users/Public/Documents/My DAZ 3D Library/People/Genesis 9/Materials/Daz Originals/Base Materials/G9 Feminine Skin 01 MAT.duf",
+    "C:/users/Public/Documents/My DAZ 3D Library/People/Genesis 9/Materials/Daz Originals/Base Materials/G9 Masculine Skin 01 MAT.duf"
+];
+var zombieSkin = "C:/users/Public/Documents/My DAZ 3D Library/People/Genesis 9/Character/Luthbel Studio/Long Time Dead/Materials/LSZ Skin.duf";
+
+var oContentMgr = App.getContentMgr();
+var oAssetIOMgr = App.getAssetIOMgr();
+
+function generate(typeLabel, count, isZombie) {
+    for (var i = 0; i < count; i++) {
+        print("Processing: " + typeLabel + " " + i);
+        
+        Scene.clear();
+        processEvents();
+        
+        var success = oContentMgr.openFile(baseFigure);
+        if (!success) {
+            print("Failed to load base figure.");
+            continue;
+        }
+        processEvents(); 
+        
+        var oFigure = Scene.getPrimarySelection();
+        if (!oFigure) continue;
+
+        // Apply Morphs
+        var oObject = oFigure.getObject();
+        var nMods = oObject.getNumModifiers();
+        for (var m = 0; m < nMods; m++) {
+            var oMod = oObject.getModifier(m);
+            if (!oMod.inherits("DzMorph")) continue;
+            var label = oMod.getLabel().toLowerCase();
+            if (isZombie) {
+                if (label.indexOf("zombie") !== -1) oMod.getValueChannel().setValue(Math.random());
+            } else {
+                if (label.indexOf("zombie") !== -1) continue;
+                if (label.indexOf("9") !== -1 || label.indexOf("shape") !== -1) oMod.getValueChannel().setValue(Math.random() * 0.7);
+            }
+        }
+
+        // Apply Skin
+        var skinPath = isZombie ? zombieSkin : humanSkins[Math.floor(Math.random() * humanSkins.length)];
+        oContentMgr.openFile(skinPath, true);
+        processEvents();
+
+        // CORRECT SAVE METHOD
+        var filename = outputFolder + "/Final_" + typeLabel + "_" + i + ".duf";
+        oAssetIOMgr.doSave(filename); 
+        print("Success! Saved to: " + filename);
+    }
+}
+
+generate("Human", nHumans, false);
+generate("Zombie", nZombies, true);
+
+print("Batch complete.");
+App.exit();
